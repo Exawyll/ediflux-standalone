@@ -6,3 +6,5 @@ jinja2
 pydantic
 python-multipart
 aiofiles
+requests
+google-cloud-storage

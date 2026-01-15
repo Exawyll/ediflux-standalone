@@ -76,7 +76,37 @@ curl -X POST "http://localhost:8000/invoices" \
 
 ---
 
-### 2. Retrieve Invoice
+### 2. List Invoices
+
+Retrieves a list of all listing generated invoices with their metadata.
+
+- **URL**: `/invoices`
+- **Method**: `GET`
+
+#### Response
+
+- **Status Code**: `200 OK`
+- **Content-Type**: `application/json`
+- **Body**: Array of invoice metadata.
+
+```json
+[
+  {
+    "id": "FV-2023-001",
+    "date": "2023-10-27",
+    "seller_name": "My Corp",
+    "buyer_name": "Client Inc",
+    "total_ht": 1000.0,
+    "total_ttc": 1200.0,
+    "currency": "EUR",
+    "created_at": "2023-10-27"
+  }
+]
+```
+
+---
+
+### 3. Retrieve Invoice
 
 Retrieves a stored invoice. Supports Content Negotiation to return either the visual PDF or the structured XML.
 
@@ -109,3 +139,17 @@ curl "http://localhost:8000/invoices/FV-2023-001" -H "Accept: application/pdf" -
 ```bash
 curl "http://localhost:8000/invoices/FV-2023-001" -H "Accept: application/xml" --output invoice.xml
 ```
+
+---
+
+### 4. Delete Invoice
+
+Deletes an invoice and its associated files.
+
+- **URL**: `/invoices/{invoice_number}`
+- **Method**: `DELETE`
+
+#### Response
+
+- **Status Code**: `204 No Content`
+
