@@ -15,6 +15,14 @@ class Party(BaseModel):
     siret: Optional[str] = None
     email: Optional[str] = None
 
+class Payment(BaseModel):
+    iban: Optional[str] = None
+    mode: Optional[str] = "30" # 30 = Credit Transfer
+
+class References(BaseModel):
+    buyer_reference: Optional[str] = None
+    order_reference: Optional[str] = None
+
 class LineItem(BaseModel):
     description: str
     quantity: float
@@ -27,4 +35,6 @@ class InvoiceRequest(BaseModel):
     seller: Party
     buyer: Party
     items: List[LineItem]
+    payment: Optional[Payment] = None
+    references: Optional[References] = None
     currency: str = "EUR"

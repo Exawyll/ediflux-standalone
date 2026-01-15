@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Default Date to today
     document.getElementById('date').valueAsDate = new Date();
 
+    // Default random IBAN (for test convenience as requested)
+    document.getElementById('payment_iban').value = "FR7630006000011234567890189";
+
     addItemBtn.addEventListener('click', addItem);
 
     // Search Functionality
@@ -19,6 +22,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // I should probably fix the HTML ID to be more descriptive, but for now I will use what I put in HTML.
     setupSearch('buyer_search', 'buyer_search_results', 'buyer');
 
+    // List Functionality
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) refreshBtn.addEventListener('click', fetchInvoices);
+
+    // Initial fetch
+    fetchInvoices();
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -26,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             messageArea.classList.add('hidden');
             const data = gatherFormData();
             await sendInvoiceRequest(data);
+            fetchInvoices(); // Refresh list after generation
         } catch (error) {
             showMessage(error.message, 'error');
         }
@@ -92,12 +103,25 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        // Payment & References
+        const payment = {
+            iban: val('payment_iban') || null,
+            mode: val('payment_mode')
+        };
+
+        const references = {
+            buyer_reference: val('ref_buyer') || null,
+            order_reference: val('ref_order') || null
+        };
+
         return {
             invoice_number: val('invoice_number'),
             date: val('date'),
             seller: seller,
             buyer: buyer,
             items: items,
+            payment: payment,
+            references: references,
             currency: "EUR"
         };
     }
@@ -262,5 +286,89 @@ document.addEventListener('DOMContentLoaded', () => {
     function setVal(id, value) {
         const el = document.getElementById(id);
         if (el) el.value = value || '';
+    }
+
+    // --- Invoice List Logic ---
+
+    async function fetchInvoices() {
+        try {
+            const response = await fetch('/invoices');
+            if (response.ok) {
+                const invoices = await response.json();
+                renderInvoices(invoices);
+            }
+        } catch (e) {
+            console.error("Failed to fetch invoices", e);
+        }
+    }
+
+    function renderInvoices(invoices) {
+        const tbody = document.querySelector('#invoicesTable tbody');
+        const noMsg = document.getElementById('noInvoicesMsg');
+
+        tbody.innerHTML = '';
+
+        if (!invoices || invoices.length === 0) {
+            noMsg.classList.remove('hidden');
+            return;
+        }
+
+        noMsg.classList.add('hidden');
+
+        // Sort by date/created_at desc
+        invoices.sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
+
+        invoices.forEach(inv => {
+            const tr = document.createElement('tr');
+
+            tr.innerHTML = `
+                <td>${inv.date}</td>
+                <td>${inv.id}</td>
+                <td>${inv.seller_name}</td>
+                <td>${inv.buyer_name}</td>
+                <td>${inv.total_ttc} ${inv.currency || 'EUR'}</td>
+                <td>
+                    <button class="btn-icon download-pdf" data-id="${inv.id}" title="PDF">PDF</button>
+                    <button class="btn-icon download-xml" data-id="${inv.id}" title="XML">XML</button>
+                </td>
+            `;
+
+            // Add listeners
+            tr.querySelector('.download-pdf').addEventListener('click', () => downloadInvoice(inv.id, 'pdf'));
+            tr.querySelector('.download-xml').addEventListener('click', () => downloadInvoice(inv.id, 'xml'));
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function downloadInvoice(id, type) {
+        const accept = type === 'xml' ? 'application/xml' : 'application/pdf';
+        const ext = type;
+
+        // We can just open in new tab or trigger download similar to generation
+        // But for headers, we might need fetch + blob if we want to force download behavior or handle Auth later.
+        // Simple direct link for PDF? browser might handle it efficiently.
+        // But we need header 'Accept' content negotiation for XML.
+        // So let's use fetch + blob approach for consistency.
+
+        try {
+            const response = await fetch(`/invoices/${id}`, {
+                headers: { 'Accept': accept }
+            });
+
+            if (!response.ok) throw new Error("Download failed");
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `facture_${id}.${ext}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        } catch (e) {
+            alert("Erreur de téléchargement: " + e.message);
+        }
     }
 });

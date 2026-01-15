@@ -57,9 +57,22 @@ try:
         # We can use factur-x library to check it or simply check file size/header
         from facturx import get_facturx_xml_from_pdf
         try:
-            xml = get_facturx_xml_from_pdf("test_invoice.pdf")
+            with open("test_invoice.pdf", "rb") as f:
+                pdf_bytes = f.read()
+            xml = get_facturx_xml_from_pdf(pdf_bytes)
             print("Success: Factur-X XML found in PDF")
+            xml_str = xml.decode('utf-8')
             print(f"XML length: {len(xml)}")
+            
+            if "urn:cen.eu:en16931:2017" in xml_str:
+                print("VALIDATION SUCCESS: Profile is EN 16931")
+            else:
+                print("VALIDATION ERROR: Profile ID not matching EN 16931")
+                
+            if "IncludedSupplyChainTradeLineItem" in xml_str:
+                print("VALIDATION SUCCESS: Found Line Items")
+            else:
+                print("VALIDATION ERROR: No Line Items found")
         except Exception as e:
             print(f"Error checking Factur-X XML: {e}")
 

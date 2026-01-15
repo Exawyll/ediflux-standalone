@@ -125,6 +125,37 @@
                 </div>
             </section>
 
+            <!-- Payment & References (EN16931) -->
+            <section class="card">
+                <h2>Paiement & Références</h2>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="payment_iban">IBAN Vendeur (Optionnel - Pour test)</label>
+                        <input type="text" id="payment_iban" name="payment.iban" placeholder="FR76...">
+                    </div>
+                    <div class="form-group">
+                        <label for="payment_mode">Mode de Paiement</label>
+                        <select id="payment_mode" name="payment.mode">
+                            <option value="30">Virement (SEPA)</option>
+                            <option value="10">Espèces</option>
+                            <option value="48">Carte Bancaire</option>
+                            <option value="42">Virement Bancaire</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="ref_buyer">Référence Acheteur (Code Service)</label>
+                        <input type="text" id="ref_buyer" name="references.buyer_reference"
+                            placeholder="ex: IT-SERVICES">
+                    </div>
+                    <div class="form-group">
+                        <label for="ref_order">Référence Commande (PO)</label>
+                        <input type="text" id="ref_order" name="references.order_reference" placeholder="ex: PO-123456">
+                    </div>
+                </div>
+            </section>
+
             <!-- Line Items -->
             <section class="card">
                 <div class="header-with-action">
@@ -142,6 +173,34 @@
 
             <div id="messageArea" class="message hidden"></div>
         </form>
+
+        <!-- Existing Invoices Section -->
+        <section class="card" style="margin-top: 2rem;">
+            <div class="header-with-action">
+                <h2>Factures Existantes</h2>
+                <button type="button" class="btn-secondary" id="refreshBtn">Actualiser</button>
+            </div>
+            <div class="table-container">
+                <table id="invoicesTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>N° Facture</th>
+                            <th>Vendeur</th>
+                            <th>Acheteur</th>
+                            <th>Montant TTC</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Invoices will be populated here -->
+                    </tbody>
+                </table>
+                <div id="noInvoicesMsg" class="hidden" style="text-align: center; padding: 1rem; color: #666;">
+                    Aucune facture trouvée.
+                </div>
+            </div>
+        </section>
     </div>
 
     <!-- Template for a line item -->
@@ -164,7 +223,13 @@
             <div class="grid-4">
                 <div class="form-group">
                     <label>Taux TVA (%)</label>
-                    <input type="number" class="item-vat" value="20.0" step="0.1" required>
+                    <select class="item-vat" required>
+                        <option value="20.0" selected>20%</option>
+                        <option value="10.0">10%</option>
+                        <option value="5.5">5.5%</option>
+                        <option value="2.1">2.1%</option>
+                        <option value="0.0">0%</option>
+                    </select>
                 </div>
                 <div class="form-group remove-container">
                     <button type="button" class="btn-danger remove-item">Supprimer</button>

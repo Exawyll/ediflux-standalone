@@ -9,6 +9,19 @@ It is configured to generate invoices complying with the **Factur-X Basic-WL** (
 - Python 3.9+
 - Pip
 
+## Deployment
+
+### Google Cloud Platform (GCP) Ready
+
+This application is designed to be deployed on GCP (Cloud Run) with invoice storage on Google Cloud Storage (GCS).
+
+**Configuration:**
+- Set `STORAGE_TYPE=GCS`.
+- Set `GCS_BUCKET_NAME=your-bucket-name`.
+- Ensure the service account has `roles/storage.objectAdmin` on the bucket.
+
+The Frontend is stateless and served directly by the backend, ensuring it works seamlessly in a containerized environment (relative paths).
+
 ## Installation
 
 1.  **Create and activate a virtual environment:**
@@ -44,13 +57,28 @@ It is configured to generate invoices complying with the **Factur-X Basic-WL** (
 
 ## Usage
 
-1.  Fill out the invoice details (Seller, Buyer, Items).
-2.  Click "Générer la Facture Factur-X".
-3.  The valid Factur-X PDF will be generated and downloaded automatically.
+1.  **Generate Invoke:**
+    - Fill out the invoice details (Auto-fill available via Company Search).
+    - Click "Générer la Facture Factur-X".
+    - The generated PDF/A-3 invoice will be downloaded.
 
-## Testing API Directly
+2.  **View & Re-download:**
+    - Scroll down to "Factures Existantes".
+    - Click "Actualiser" (Refresh) if needed.
+    - Click the **PDF** or **XML** buttons to re-download the files.
 
-### Option 1: Using the provided Python script
+## Testing
+
+### Manual Testing (Step-by-Step)
+
+1.  **Start the server**: `uvicorn main:app --reload`
+2.  **Open Frontend**: Go to `http://localhost:8000/`.
+3.  **Search Company**: Type "Google" in the Seller search box and select a result. Verify fields are filled.
+4.  **Create Invoice**: Fill remaining fields and submit. Verify PDF download.
+5.  **Verify List**: Check the "Factures Existantes" table. The new invoice should appear.
+6.  **Download Again**: Click "PDF" and "XML" in the table row. Verify both files download correctly.
+
+### Automated Testing
 
 We have provided a `test_api.py` script that sends a sample request to your running local server and saves the generated invoice.
 
