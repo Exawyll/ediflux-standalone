@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 import sys
+import os
 from PyInstaller.utils.hooks import copy_metadata
 
 block_cipher = None
@@ -9,6 +10,31 @@ datas = [
     ('frontend', 'frontend'),
     ('templates', 'templates'),
 ]
+
+# Collect GTK3 DLLs for WeasyPrint if on Windows
+binaries = []
+if sys.platform == 'win32':
+    gtk_dirs = [
+        os.environ.get('GTK_FOLDER'),
+        r'C:\Program Files\GTK3-Runtime Win64\bin',
+        r'C:\Program Files (x86)\GTK3-Runtime Win64\bin',
+        r'C:\gtk\bin',
+    ]
+    
+    gtk_bin_path = None
+    for d in gtk_dirs:
+        if d and os.path.exists(d):
+            gtk_bin_path = d
+            break
+            
+    if gtk_bin_path:
+        print(f"Found GTK3 at: {gtk_bin_path}")
+        for filename in os.listdir(gtk_bin_path):
+            if filename.endswith('.dll'):
+                # Bundle into the top-level directory of the exe ('.' means root of bundle)
+                binaries.append((os.path.join(gtk_bin_path, filename), '.'))
+    else:
+        print("WARNING: GTK3 bin path not found. WeasyPrint may fail.")
 
 # Uvicorn and other hidden imports
 hiddenimports = [
@@ -24,6 +50,7 @@ hiddenimports = [
     'uvicorn.lifespan.on',
     'uvicorn.lifespan.off',
     'pydantic',
+    'weasyprint', 
 ]
 
 # Handling imports for python-multipart if used
@@ -36,7 +63,7 @@ except ImportError:
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
