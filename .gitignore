@@ -5,4 +5,5 @@ __pycache__/
 invoices/
 *.pdf
 *.xml
+!templates/*.xml
 .env
