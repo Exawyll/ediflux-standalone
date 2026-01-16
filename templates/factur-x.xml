@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100"
+    xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100"
+    xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100"
+    xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <rsm:ExchangedDocumentContext>
+        <ram:GuidelineSpecifiedDocumentContextParameter>
+            <ram:ID>urn:cen.eu:en16931:2017</ram:ID>
+        </ram:GuidelineSpecifiedDocumentContextParameter>
+    </rsm:ExchangedDocumentContext>
+    <rsm:ExchangedDocument>
+        <ram:ID>{{ invoice.invoice_number }}</ram:ID>
+        <ram:TypeCode>380</ram:TypeCode>
+        <ram:IssueDateTime>
+            <udt:DateTimeString format="102">{{ invoice.date.strftime('%Y%m%d') }}</udt:DateTimeString>
+        </ram:IssueDateTime>
+    </rsm:ExchangedDocument>
+    <rsm:SupplyChainTradeTransaction>
+        {% for item in invoice.items %}
+        <ram:IncludedSupplyChainTradeLineItem>
+            <ram:AssociatedDocumentLineDocument>
+                <ram:LineID>{{ loop.index }}</ram:LineID>
+            </ram:AssociatedDocumentLineDocument>
+            <ram:SpecifiedTradeProduct>
+                <ram:Name>{{ item.description }}</ram:Name>
+            </ram:SpecifiedTradeProduct>
+            <ram:SpecifiedLineTradeAgreement>
+                <ram:NetPriceProductTradePrice>
+                    <ram:ChargeAmount currencyID="{{ invoice.currency }}">{{ "%.2f"|format(item.unit_price) }}</ram:ChargeAmount>
+                </ram:NetPriceProductTradePrice>
+            </ram:SpecifiedLineTradeAgreement>
+            <ram:SpecifiedLineTradeDelivery>
+                <ram:BilledQuantity unitCode="H87">{{ "%.2f"|format(item.quantity) }}</ram:BilledQuantity>
+            </ram:SpecifiedLineTradeDelivery>
+            <ram:SpecifiedLineTradeSettlement>
+                <ram:ApplicableTradeTax>
+                    <ram:TypeCode>VAT</ram:TypeCode>
+                    <ram:CategoryCode>S</ram:CategoryCode>
+                    <ram:RateApplicablePercent>{{ "%.2f"|format(item.vat_rate) }}</ram:RateApplicablePercent>
+                </ram:ApplicableTradeTax>
+                <ram:SpecifiedTradeSettlementLineMonetarySummation>
+                    <ram:LineTotalAmount currencyID="{{ invoice.currency }}">{{ "%.2f"|format(item.quantity * item.unit_price) }}</ram:LineTotalAmount>
+                </ram:SpecifiedTradeSettlementLineMonetarySummation>
+            </ram:SpecifiedLineTradeSettlement>
+        </ram:IncludedSupplyChainTradeLineItem>
+        {% endfor %}
+
+        <ram:ApplicableHeaderTradeAgreement>
+            <ram:SellerTradeParty>
+                <ram:Name>{{ invoice.seller.name }}</ram:Name>
+                <ram:PostalTradeAddress>
+                    <ram:PostcodeCode>{{ invoice.seller.address.zip_code }}</ram:PostcodeCode>
+                    <ram:LineOne>{{ invoice.seller.address.street }}</ram:LineOne>
+                    <ram:CityName>{{ invoice.seller.address.city }}</ram:CityName>
+                    <ram:CountryID>{{ invoice.seller.address.country_code }}</ram:CountryID>
+                </ram:PostalTradeAddress>
+                <ram:SpecifiedTaxRegistration>
+                    <ram:ID schemeID="VA">{{ invoice.seller.vat_id }}</ram:ID>
+                </ram:SpecifiedTaxRegistration>
+            </ram:SellerTradeParty>
+            <ram:BuyerTradeParty>
+                <ram:Name>{{ invoice.buyer.name }}</ram:Name>
+                <ram:PostalTradeAddress>
+                    <ram:PostcodeCode>{{ invoice.buyer.address.zip_code }}</ram:PostcodeCode>
+                    <ram:LineOne>{{ invoice.buyer.address.street }}</ram:LineOne>
+                    <ram:CityName>{{ invoice.buyer.address.city }}</ram:CityName>
+                    <ram:CountryID>{{ invoice.buyer.address.country_code }}</ram:CountryID>
+                </ram:PostalTradeAddress>
+                <ram:SpecifiedTaxRegistration>
+                    <ram:ID schemeID="VA">{{ invoice.buyer.vat_id }}</ram:ID>
+                </ram:SpecifiedTaxRegistration>
+            </ram:BuyerTradeParty>
+        </ram:ApplicableHeaderTradeAgreement>
+        <ram:ApplicableHeaderTradeDelivery>
+            <!-- Delivery details if needed -->
+        </ram:ApplicableHeaderTradeDelivery>
+        <ram:ApplicableHeaderTradeSettlement>
+            <ram:InvoiceCurrencyCode>{{ invoice.currency }}</ram:InvoiceCurrencyCode>
+            {% for rate, amount in vat_amounts.items() %}
+            <ram:ApplicableTradeTax>
+                <ram:CalculatedAmount currencyID="{{ invoice.currency }}">{{ "%.2f"|format(amount) }}</ram:CalculatedAmount>
+                <ram:TypeCode>VAT</ram:TypeCode>
+                <ram:BasisAmount currencyID="{{ invoice.currency }}">{{ "%.2f"|format(total_tax_basis) }}</ram:BasisAmount> <!-- Simplified: assuming single rate or aggregated basis for this rate. Ideally filter basis by rate. -->
+                <ram:CategoryCode>S</ram:CategoryCode>
+                <ram:RateApplicablePercent>{{ "%.2f"|format(rate) }}</ram:RateApplicablePercent>
+            </ram:ApplicableTradeTax>
+            {% endfor %}
+            <ram:SpecifiedTradeSettlementHeaderMonetarySummation>
+                <ram:LineTotalAmount currencyID="{{ invoice.currency }}">{{ "%.2f"|format(total_tax_basis) }}</ram:LineTotalAmount> <!-- Assuming no global discount -->
+                <ram:TaxBasisTotalAmount currencyID="{{ invoice.currency }}">{{ "%.2f"|format(total_tax_basis) }}</ram:TaxBasisTotalAmount>
+                <ram:TaxTotalAmount currencyID="{{ invoice.currency }}">{{ "%.2f"|format(total_vat) }}</ram:TaxTotalAmount>
+                <ram:GrandTotalAmount currencyID="{{ invoice.currency }}">{{ "%.2f"|format(total_with_tax) }}</ram:GrandTotalAmount>
+                <ram:DuePayableAmount currencyID="{{ invoice.currency }}">{{ "%.2f"|format(total_with_tax) }}</ram:DuePayableAmount>
+            </ram:SpecifiedTradeSettlementHeaderMonetarySummation>
+        </ram:ApplicableHeaderTradeSettlement>
+    </rsm:SupplyChainTradeTransaction>
+</rsm:CrossIndustryInvoice>
