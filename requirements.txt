@@ -9,3 +9,4 @@ aiofiles
 requests
 google-cloud-storage
 python-dotenv
+pyinstaller
