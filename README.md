@@ -128,3 +128,21 @@ curl -X POST "http://localhost:8000/invoices" \
 You can use the online validator [FNFE-MPE Validator](https://services.fnfe-mpe.org/factur-x/validation) or the `factur-x` python library to inspect the generated PDF.
 
 The `test_api.py` script attempts to verify the existence of the XML attachment automatically.
+
+## Remote Invoice Integration
+
+You can send generated invoices to a distant API for processing/integration (RabbitMQ injection).
+
+**Environment Variables:**
+Ensure the following variables are set (e.g., via `.env` or shell):
+- `KEYCLOAK_SERVER_URL`: Keycloak server URL.
+- `KEYCLOAK_REALM_NAME`: Keycloak Realm.
+- `KEYCLOAK_CLIENT_ID`: Keycloak Client ID.
+- `KEYCLOAK_CLIENT_SECRET`: Keycloak Client Secret.
+- `REMOTE_API_URL`: URL of the remote API.
+- `APP_BASE_URL`: Public URL of this application (for callbacks).
+- `RABBITMQ_ROUTING_KEY`: Routing key for the message.
+
+**Trigger Sending:**
+Send a POST request to:
+`POST /invoices/{invoice_number}/send`

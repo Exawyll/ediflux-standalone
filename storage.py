@@ -21,6 +21,11 @@ class InvoiceStorage(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def get_invoice_metadata(self, invoice_id: str) -> Optional[Dict]:
+        """Returns metadata dict for a specific invoice"""
+        pass
+
+    @abc.abstractmethod
     def delete_invoice(self, invoice_id: str):
         pass
 
@@ -76,6 +81,16 @@ class LocalStorage(InvoiceStorage):
                     continue # Skip broken files
         return invoices
 
+    def get_invoice_metadata(self, invoice_id: str) -> Optional[Dict]:
+        _, _, meta_path = self._get_paths(invoice_id)
+        if not os.path.exists(meta_path):
+            return None
+        try:
+            with open(meta_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return None
+
     def delete_invoice(self, invoice_id: str):
         pdf_path, xml_path, meta_path = self._get_paths(invoice_id)
         for p in [pdf_path, xml_path, meta_path]:
@@ -128,6 +143,16 @@ class GCSStorage(InvoiceStorage):
             except Exception:
                 continue
         return invoices
+
+    def get_invoice_metadata(self, invoice_id: str) -> Optional[Dict]:
+        blob_meta = self.bucket.blob(f"{invoice_id}.meta.json")
+        if not blob_meta.exists():
+            return None
+        try:
+            content = blob_meta.download_as_text()
+            return json.loads(content)
+        except Exception:
+            return None
 
     def delete_invoice(self, invoice_id: str):
         self.bucket.blob(f"{invoice_id}.pdf").delete(quiet=True)

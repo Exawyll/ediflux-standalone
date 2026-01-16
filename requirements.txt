@@ -8,3 +8,4 @@ python-multipart
 aiofiles
 requests
 google-cloud-storage
+python-dotenv

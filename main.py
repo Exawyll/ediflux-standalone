@@ -1,10 +1,16 @@
 import os
 from fastapi import FastAPI, HTTPException, Response, Header, Depends
 from fastapi.responses import FileResponse, JSONResponse
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from models import InvoiceRequest
 from invoice_generator import generate_invoice_pdf
 from storage import get_storage, InvoiceStorage
+from invoice_sender import send_invoice_task
 from typing import List
+from datetime import datetime
 
 app = FastAPI(title="Factur-X Invoice Generator")
 
@@ -86,8 +92,31 @@ async def get_invoice(invoice_number: str, accept: str = Header(default="applica
 @app.delete("/invoices/{invoice_number}")
 async def delete_invoice(invoice_number: str):
     storage = get_storage()
-    storage.delete_invoice(invoice_number)
     return Response(status_code=204)
+
+@app.post("/invoices/{invoice_number}/send")
+async def send_existing_invoice(invoice_number: str):
+    storage = get_storage()
+    metadata = storage.get_invoice_metadata(invoice_number)
+    if not metadata:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    # Extract date
+    try:
+        # metadata['date'] is str(date) -> YYYY-MM-DD
+        invoice_date = datetime.strptime(metadata['date'], "%Y-%m-%d").date()
+    except (KeyError, ValueError):
+        # Fallback to current date if missing or malformed
+        invoice_date = datetime.now().date()
+    
+    try:
+        success = send_invoice_task(invoice_number, invoice_date, f"{invoice_number}.pdf")
+        if success:
+             return {"message": "Invoice sent successfully"}
+        else:
+             raise HTTPException(status_code=500, detail="Failed to send invoice (unknown error)")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send invoice: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
