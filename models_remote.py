@@ -11,7 +11,7 @@ class DocumentMessageDTO(BaseModel):
     origine: Optional[str] = None
 
 class FluxExportDocument(BaseModel):
-    numeroDossier: str = "100602"
+    numeroDossier: str = "32025"
     idDocument: str
     typeDocument: str = "FACTURE_CLIENT"
     origine: Optional[str] = "FACTUR-X-PYTHON"

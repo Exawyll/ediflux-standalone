@@ -118,6 +118,22 @@ async def send_existing_invoice(invoice_number: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to send invoice: {str(e)}")
 
+@app.get("/documents/{invoice_number}")
+async def get_invoice_document(invoice_number: str):
+    """
+    Endpoint exposed for remote integration to fetch the Factur-X XML.
+    Returns Content-Type: application/xml
+    """
+    storage = get_storage()
+    result = storage.get_invoice(invoice_number)
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="Document not found")
+        
+    _, xml_content = result
+    return Response(content=xml_content, media_type="application/xml")
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

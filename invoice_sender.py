@@ -43,7 +43,7 @@ class InvoiceSender:
         )
 
         flux_export = FluxExportDocument(
-            numeroDossier="100602", # Default as per requirements
+            numeroDossier="32025", # Default as per requirements
             idDocument=invoice_number,
             typeDocument="FACTURE_CLIENT", # Sales invoice
             origine="FACTUR-X-PYTHON",
