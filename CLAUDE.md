@@ -39,6 +39,7 @@ Frontend (HTML/JS at /static) → FastAPI Endpoints → Invoice Generator → St
 - **main.py**: FastAPI app entry point, all REST endpoints
 - **models.py**: Pydantic models (InvoiceRequest, Party, Address, LineItem, Payment)
 - **invoice_generator.py**: PDF generation via WeasyPrint + Factur-X XML embedding
+- **xml_processor.py**: XML extraction from Factur-X PDFs, CII validation, metadata parsing
 - **storage.py**: Abstract storage layer with LocalStorage and GCSStorage implementations
 - **invoice_sender.py**: Remote API integration for RabbitMQ message injection
 - **auth/token.py**: Keycloak OAuth2 client credentials flow
@@ -47,6 +48,7 @@ Frontend (HTML/JS at /static) → FastAPI Endpoints → Invoice Generator → St
 ### Templates
 - `templates/invoice.html`: Jinja2 template for invoice PDF rendering
 - `templates/factur-x.xml`: Factur-X CII XML template
+- `templates/upload-placeholder.html`: Template for imported XML invoices (no original PDF)
 
 ### Storage Selection
 Controlled by `STORAGE_TYPE` env var:
@@ -58,6 +60,7 @@ Controlled by `STORAGE_TYPE` env var:
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
 | POST | `/invoices` | Generate and store invoice, returns PDF |
+| POST | `/invoices/upload` | Upload Factur-X PDF or CII XML file |
 | GET | `/invoices` | List all invoices metadata |
 | GET | `/invoices/{id}` | Get PDF (or XML if Accept: application/xml) |
 | DELETE | `/invoices/{id}` | Delete invoice |
@@ -81,4 +84,8 @@ For GCS storage:
 
 ## Key Dependencies
 
-WeasyPrint requires system libraries (Pango, Pixbuf). On Windows, GTK3 runtime must be installed. The PyInstaller build (`main.spec`) bundles GTK3 DLLs automatically.
+- **WeasyPrint**: PDF generation (requires system libraries: Pango, Pixbuf). On Windows, GTK3 runtime must be installed.
+- **facturx**: Factur-X PDF/XML generation and extraction
+- **lxml**: XML parsing for CII/EN16931 validation and metadata extraction
+
+The PyInstaller build (`main.spec`) bundles GTK3 DLLs automatically for Windows.

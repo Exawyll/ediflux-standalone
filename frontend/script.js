@@ -21,9 +21,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const deleteInvoiceBtn = document.getElementById('deleteInvoiceBtn');
     const generateBtn = document.getElementById('generateBtn');
 
+    // Upload elements
+    const modeToggleBtns = document.querySelectorAll('.mode-btn');
+    const uploadSection = document.getElementById('uploadSection');
+    const uploadDropzone = document.getElementById('uploadDropzone');
+    const fileInput = document.getElementById('fileInput');
+    const filePreview = document.getElementById('filePreview');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const removeFileBtn = document.getElementById('removeFileBtn');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const uploadMessageArea = document.getElementById('uploadMessageArea');
+
     // State
     let currentInvoiceId = null;
     let invoicesData = [];
+    let selectedFile = null;
+    let currentMode = 'create';
 
     // ===== Initialization =====
     addItem();
@@ -46,6 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Setup collapsible sections
     setupCollapsibleSections();
+
+    // Setup upload functionality
+    setupUpload();
 
     // Initial fetch
     fetchInvoices();
@@ -96,6 +113,186 @@ document.addEventListener('DOMContentLoaded', () => {
                 section.classList.toggle('collapsed');
             });
         });
+    }
+
+    // ===== Upload Functionality =====
+    function setupUpload() {
+        // Mode toggle
+        modeToggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.mode;
+                switchMode(mode);
+            });
+        });
+
+        // Dropzone click to select file
+        uploadDropzone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        // Drag & drop events
+        uploadDropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadDropzone.classList.add('dragover');
+        });
+
+        uploadDropzone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadDropzone.classList.remove('dragover');
+        });
+
+        uploadDropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadDropzone.classList.remove('dragover');
+
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Remove file button
+        removeFileBtn.addEventListener('click', () => {
+            clearSelectedFile();
+        });
+
+        // Upload button
+        uploadBtn.addEventListener('click', () => {
+            uploadFile();
+        });
+    }
+
+    function switchMode(mode) {
+        currentMode = mode;
+
+        // Update toggle buttons
+        modeToggleBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+
+        // Show/hide sections
+        if (mode === 'upload') {
+            uploadSection.classList.remove('hidden');
+            invoiceForm.classList.add('hidden');
+        } else {
+            uploadSection.classList.add('hidden');
+            invoiceForm.classList.remove('hidden');
+        }
+
+        // Clear any messages
+        uploadMessageArea.classList.add('hidden');
+        messageArea.classList.add('hidden');
+    }
+
+    function handleFileSelect(file) {
+        // Validate file type
+        const ext = file.name.toLowerCase().split('.').pop();
+        if (ext !== 'pdf' && ext !== 'xml') {
+            showUploadMessage('Type de fichier invalide. Formats acceptes: PDF, XML', 'error');
+            return;
+        }
+
+        selectedFile = file;
+
+        // Update preview
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+
+        // Show preview, hide dropzone
+        uploadDropzone.classList.add('hidden');
+        filePreview.classList.remove('hidden');
+
+        // Enable upload button
+        uploadBtn.disabled = false;
+
+        // Clear any previous error messages
+        uploadMessageArea.classList.add('hidden');
+    }
+
+    function clearSelectedFile() {
+        selectedFile = null;
+        fileInput.value = '';
+
+        // Hide preview, show dropzone
+        filePreview.classList.add('hidden');
+        uploadDropzone.classList.remove('hidden');
+
+        // Disable upload button
+        uploadBtn.disabled = true;
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' octets';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' Ko';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' Mo';
+    }
+
+    function showUploadMessage(msg, type) {
+        uploadMessageArea.textContent = msg;
+        uploadMessageArea.className = `message ${type}`;
+        uploadMessageArea.classList.remove('hidden');
+
+        if (type === 'success') {
+            setTimeout(() => {
+                uploadMessageArea.classList.add('hidden');
+            }, 5000);
+        }
+    }
+
+    async function uploadFile() {
+        if (!selectedFile) return;
+
+        const originalText = uploadBtn.innerHTML;
+        uploadBtn.innerHTML = `
+            <svg class="spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+            </svg>
+            Import en cours...
+        `;
+        uploadBtn.disabled = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            const response = await fetch('/invoices/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.detail || `Erreur ${response.status}`);
+            }
+
+            const metadata = await response.json();
+            showUploadMessage(`Facture ${metadata.id} importee avec succes !`, 'success');
+
+            // Clear the file and refresh the list
+            clearSelectedFile();
+            fetchInvoices();
+
+            // Optionally show the imported invoice
+            setTimeout(() => {
+                showDetailView(metadata.id);
+            }, 500);
+
+        } catch (error) {
+            console.error('Upload error:', error);
+            showUploadMessage('Erreur lors de l\'import: ' + error.message, 'error');
+        } finally {
+            uploadBtn.innerHTML = originalText;
+            uploadBtn.disabled = selectedFile === null;
+        }
     }
 
     // ===== Line Items =====

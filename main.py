@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, HTTPException, Response, Header, Depends
+from fastapi import FastAPI, HTTPException, Response, Header, Depends, UploadFile, File
 from fastapi.responses import FileResponse, JSONResponse
 from dotenv import load_dotenv
 
@@ -9,6 +9,7 @@ from models import InvoiceRequest
 from invoice_generator import generate_invoice_pdf
 from storage import get_storage, InvoiceStorage
 from invoice_sender import send_invoice_task
+from xml_processor import extract_xml_from_pdf, validate_cii_xml, extract_metadata_from_xml, create_placeholder_pdf
 from typing import List
 from datetime import datetime
 
@@ -64,6 +65,117 @@ async def create_invoice(invoice_data: InvoiceRequest):
         return Response(content=pdf_bytes, media_type="application/pdf")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/invoices/upload")
+async def upload_invoice(file: UploadFile = File(...)):
+    """
+    Upload a Factur-X PDF or CII XML invoice file.
+
+    - For PDF files: Extracts the embedded Factur-X XML
+    - For XML files: Validates CII structure and creates a placeholder PDF
+
+    Returns the extracted metadata on success.
+    """
+    # Validate file extension
+    filename = file.filename or ""
+    ext = filename.lower().rsplit('.', 1)[-1] if '.' in filename else ''
+
+    if ext not in ('pdf', 'xml'):
+        raise HTTPException(
+            status_code=400,
+            detail="Type de fichier invalide. Formats acceptes: PDF (Factur-X), XML (CII/EN16931)"
+        )
+
+    # Read file content
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Fichier vide")
+
+    xml_content = None
+    pdf_bytes = None
+
+    if ext == 'pdf':
+        # Extract XML from PDF
+        try:
+            xml_content = extract_xml_from_pdf(content)
+            if not xml_content:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Impossible d'extraire le XML Factur-X du PDF. Le fichier n'est peut-etre pas un PDF Factur-X valide."
+                )
+            pdf_bytes = content
+        except ImportError:
+            raise HTTPException(
+                status_code=500,
+                detail="La bibliotheque facturx n'est pas installee. Impossible de traiter les PDF."
+            )
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=f"Erreur lors de l'extraction XML: {str(e)}")
+
+    else:  # XML file
+        # Decode XML content
+        try:
+            xml_content = content.decode('utf-8')
+        except UnicodeDecodeError:
+            try:
+                xml_content = content.decode('iso-8859-1')
+            except Exception:
+                raise HTTPException(status_code=422, detail="Impossible de decoder le fichier XML")
+
+        # Validate CII structure
+        is_valid, error_msg = validate_cii_xml(xml_content)
+        if not is_valid:
+            raise HTTPException(
+                status_code=422,
+                detail=f"XML non conforme CII/EN16931: {error_msg}"
+            )
+
+    # Extract metadata from XML
+    metadata = extract_metadata_from_xml(xml_content)
+
+    # Validate that we extracted meaningful data
+    if not metadata.get('_valid', False):
+        missing_fields = []
+        if not metadata.get('id'):
+            missing_fields.append("numero de facture")
+        if not metadata.get('seller_name'):
+            missing_fields.append("nom du vendeur")
+        if not metadata.get('buyer_name'):
+            missing_fields.append("nom de l'acheteur")
+
+        raise HTTPException(
+            status_code=422,
+            detail=f"Impossible d'extraire les donnees essentielles du XML: {', '.join(missing_fields)}. Verifiez que le fichier est bien un Factur-X/CII valide."
+        )
+
+    # Remove internal validation flag before saving
+    metadata.pop('_valid', None)
+
+    # Check for duplicate
+    storage = get_storage()
+    existing = storage.get_invoice_metadata(metadata['id'])
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Une facture avec le numero '{metadata['id']}' existe deja"
+        )
+
+    # For XML-only uploads, create a placeholder PDF
+    if pdf_bytes is None:
+        try:
+            pdf_bytes = create_placeholder_pdf(xml_content, metadata)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Erreur lors de la creation du PDF: {str(e)}")
+
+    # Save the invoice
+    try:
+        storage.save_invoice(metadata['id'], pdf_bytes, xml_content, metadata)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la sauvegarde: {str(e)}")
+
+    return JSONResponse(content=metadata)
+
 
 @app.get("/invoices")
 async def list_invoices():

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Facture {{ metadata.id }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #1e293b;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .invoice-title {
+            font-size: 24pt;
+            font-weight: 700;
+            color: #2563eb;
+            margin: 0 0 5px 0;
+        }
+
+        .invoice-subtitle {
+            font-size: 10pt;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .invoice-date {
+            text-align: right;
+            font-size: 11pt;
+            color: #64748b;
+        }
+
+        .invoice-date strong {
+            display: block;
+            font-size: 12pt;
+            color: #1e293b;
+        }
+
+        .parties {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+        }
+
+        .party {
+            width: 45%;
+        }
+
+        .party h3 {
+            font-size: 9pt;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin: 0 0 10px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .party .name {
+            font-size: 14pt;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0 0 5px 0;
+        }
+
+        .party .address {
+            font-size: 10pt;
+            color: #64748b;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .party .vat {
+            font-size: 9pt;
+            color: #94a3b8;
+            margin: 10px 0 0 0;
+        }
+
+        .totals-section {
+            margin-top: 40px;
+        }
+
+        .totals-section h3 {
+            font-size: 9pt;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin: 0 0 15px 0;
+        }
+
+        .totals-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            width: 300px;
+            margin-left: auto;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 11pt;
+        }
+
+        .total-row .label {
+            color: #64748b;
+        }
+
+        .total-row .value {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .total-row.grand-total {
+            border-top: 2px solid #e2e8f0;
+            margin-top: 10px;
+            padding-top: 15px;
+            font-size: 14pt;
+        }
+
+        .total-row.grand-total .value {
+            color: #2563eb;
+            font-weight: 700;
+        }
+
+        .import-notice {
+            margin-top: 60px;
+            padding: 20px;
+            background: #dbeafe;
+            border: 1px solid #93c5fd;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .import-notice p {
+            margin: 0;
+            font-size: 10pt;
+            color: #1e40af;
+        }
+
+        .import-notice strong {
+            display: block;
+            font-size: 11pt;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1 class="invoice-title">Facture {{ metadata.id }}</h1>
+            <p class="invoice-subtitle">Document importe - Factur-X / CII XML</p>
+        </div>
+        <div class="invoice-date">
+            <span>Date d'emission</span>
+            <strong>{{ metadata.date or 'Non specifiee' }}</strong>
+        </div>
+    </div>
+
+    <div class="parties">
+        <div class="party">
+            <h3>Vendeur</h3>
+            <p class="name">{{ metadata.seller_name or 'Non specifie' }}</p>
+            {% if metadata.seller_address %}
+            <p class="address">{{ metadata.seller_address }}</p>
+            {% endif %}
+            {% if metadata.seller_vat %}
+            <p class="vat">TVA: {{ metadata.seller_vat }}</p>
+            {% endif %}
+        </div>
+
+        <div class="party">
+            <h3>Acheteur</h3>
+            <p class="name">{{ metadata.buyer_name or 'Non specifie' }}</p>
+            {% if metadata.buyer_address %}
+            <p class="address">{{ metadata.buyer_address }}</p>
+            {% endif %}
+            {% if metadata.buyer_vat %}
+            <p class="vat">TVA: {{ metadata.buyer_vat }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="totals-section">
+        <h3>Montants</h3>
+        <div class="totals-box">
+            <div class="total-row">
+                <span class="label">Total HT</span>
+                <span class="value">{{ "%.2f"|format(metadata.total_ht or 0) }} {{ metadata.currency or 'EUR' }}</span>
+            </div>
+            <div class="total-row">
+                <span class="label">TVA</span>
+                <span class="value">{{ "%.2f"|format(metadata.total_tax or (metadata.total_ttc - metadata.total_ht) or 0) }} {{ metadata.currency or 'EUR' }}</span>
+            </div>
+            <div class="total-row grand-total">
+                <span class="label">Total TTC</span>
+                <span class="value">{{ "%.2f"|format(metadata.total_ttc or 0) }} {{ metadata.currency or 'EUR' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="import-notice">
+        <p>
+            <strong>Document de synthese</strong>
+            Ce document a ete genere automatiquement a partir d'un fichier XML CII/EN16931 importe.
+            Les donnees structurees sont disponibles dans le fichier XML associe.
+        </p>
+    </div>
+</body>
+</html>
