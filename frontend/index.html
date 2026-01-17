@@ -4,225 +4,334 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Générateur de Factures Factur-X</title>
+    <title>Factur-X - Gestionnaire de Factures</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div class="container">
-        <header>
-            <h1>Générateur de Factures Factur-X</h1>
-            <p>Créez des factures normées Factur-X (Basic WL) simplement.</p>
-        </header>
-
-        <form id="invoiceForm">
-            <!-- Invoice Details -->
-            <section class="card">
-                <h2>Détails Facture</h2>
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label for="invoice_number">Numéro de Facture</label>
-                        <input type="text" id="invoice_number" name="invoice_number" required
-                            placeholder="ex: FV-2023-001">
-                    </div>
-                    <div class="form-group">
-                        <label for="date">Date</label>
-                        <input type="date" id="date" name="date" required>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Seller Info -->
-            <section class="card">
-                <div class="header-with-action">
-                    <h2>Vendeur</h2>
-                    <div class="search-box">
-                        <input type="text" id="pass" placeholder="Recherche entreprise..." class="search-input"
-                            autocomplete="off">
-                        <div id="seller_search_results" class="search-results hidden"></div>
-                    </div>
-                </div>
-                <!-- Warning: ID 'pass' above is a placeholder, I'll fix it in the actual writing if I can or just map it in JS -->
-                <!-- Actually I should use a specific ID. -->
-
-                <div class="form-group">
-                    <label for="seller_name">Nom / Raison Sociale</label>
-                    <input type="text" id="seller_name" name="seller.name" required>
-                </div>
-                <div class="form-group">
-                    <label for="seller_email">Email</label>
-                    <input type="email" id="seller_email" name="seller.email">
-                </div>
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label for="seller_vat">N° TVA Intracommunautaire</label>
-                        <input type="text" id="seller_vat" name="seller.vat_id">
-                    </div>
-                    <div class="form-group">
-                        <label for="seller_siret">SIRET</label>
-                        <input type="text" id="seller_siret" name="seller.siret">
-                    </div>
-                </div>
-                <h3>Adresse</h3>
-                <div class="form-group">
-                    <label for="seller_street">Rue</label>
-                    <input type="text" id="seller_street" name="seller.address.street" required>
-                </div>
-                <div class="grid-3">
-                    <div class="form-group">
-                        <label for="seller_zip">Code Postal</label>
-                        <input type="text" id="seller_zip" name="seller.address.zip_code" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="seller_city">Ville</label>
-                        <input type="text" id="seller_city" name="seller.address.city" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="seller_country">Pays (Code ISO)</label>
-                        <input type="text" id="seller_country" name="seller.address.country_code" value="FR" required
-                            maxlength="2">
-                    </div>
-                </div>
-            </section>
-
-            <!-- Buyer Info -->
-            <section class="card">
-                <div class="header-with-action">
-                    <h2>Acheteur</h2>
-                    <div class="search-box">
-                        <input type="text" id="buyer_search" placeholder="Recherche client..." class="search-input"
-                            autocomplete="off">
-                        <div id="buyer_search_results" class="search-results hidden"></div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="buyer_name">Nom / Raison Sociale</label>
-                    <input type="text" id="buyer_name" name="buyer.name" required>
-                </div>
-                <div class="form-group">
-                    <label for="buyer_vat">N° TVA Intracommunautaire</label>
-                    <input type="text" id="buyer_vat" name="buyer.vat_id">
-                </div>
-                <h3>Adresse</h3>
-                <div class="form-group">
-                    <label for="buyer_street">Rue</label>
-                    <input type="text" id="buyer_street" name="buyer.address.street" required>
-                </div>
-                <div class="grid-3">
-                    <div class="form-group">
-                        <label for="buyer_zip">Code Postal</label>
-                        <input type="text" id="buyer_zip" name="buyer.address.zip_code" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="buyer_city">Ville</label>
-                        <input type="text" id="buyer_city" name="buyer.address.city" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="buyer_country">Pays (Code ISO)</label>
-                        <input type="text" id="buyer_country" name="buyer.address.country_code" value="FR" required
-                            maxlength="2">
-                    </div>
-                </div>
-            </section>
-
-            <!-- Payment & References (EN16931) -->
-            <section class="card">
-                <h2>Paiement & Références</h2>
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label for="payment_iban">IBAN Vendeur (Optionnel - Pour test)</label>
-                        <input type="text" id="payment_iban" name="payment.iban" placeholder="FR76...">
-                    </div>
-                    <div class="form-group">
-                        <label for="payment_mode">Mode de Paiement</label>
-                        <select id="payment_mode" name="payment.mode">
-                            <option value="30">Virement (SEPA)</option>
-                            <option value="10">Espèces</option>
-                            <option value="48">Carte Bancaire</option>
-                            <option value="42">Virement Bancaire</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label for="ref_buyer">Référence Acheteur (Code Service)</label>
-                        <input type="text" id="ref_buyer" name="references.buyer_reference"
-                            placeholder="ex: IT-SERVICES">
-                    </div>
-                    <div class="form-group">
-                        <label for="ref_order">Référence Commande (PO)</label>
-                        <input type="text" id="ref_order" name="references.order_reference" placeholder="ex: PO-123456">
-                    </div>
-                </div>
-            </section>
-
-            <!-- Line Items -->
-            <section class="card">
-                <div class="header-with-action">
-                    <h2>Lignes de Facture</h2>
-                    <button type="button" class="btn-secondary" id="addItemBtn">+ Ajouter une ligne</button>
-                </div>
-                <div id="itemsContainer">
-                    <!-- Items will be added here via JS -->
-                </div>
-            </section>
-
-            <div class="actions">
-                <button type="submit" class="btn-primary" id="generateBtn">Générer la Facture Factur-X</button>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="logo">Factur-X</h1>
+                <p class="logo-subtitle">Gestionnaire de Factures</p>
             </div>
 
-            <div id="messageArea" class="message hidden"></div>
-        </form>
+            <button class="btn-new-invoice" id="newInvoiceBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Nouvelle Facture
+            </button>
 
-        <!-- Existing Invoices Section -->
-        <section class="card" style="margin-top: 2rem;">
-            <div class="header-with-action">
-                <h2>Factures Existantes</h2>
-                <button type="button" class="btn-secondary" id="refreshBtn">Actualiser</button>
-            </div>
-            <div class="table-container">
-                <table id="invoicesTable">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>N° Facture</th>
-                            <th>Vendeur</th>
-                            <th>Acheteur</th>
-                            <th>Montant TTC</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Invoices will be populated here -->
-                    </tbody>
-                </table>
-                <div id="noInvoicesMsg" class="hidden" style="text-align: center; padding: 1rem; color: #666;">
-                    Aucune facture trouvée.
+            <div class="invoice-list-container">
+                <div class="invoice-list-header">
+                    <h2>Factures</h2>
+                    <button class="btn-refresh" id="refreshBtn" title="Actualiser">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 4v6h-6"></path>
+                            <path d="M1 20v-6h6"></path>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="invoice-list" id="invoiceList">
+                    <!-- Invoice items populated by JS -->
+                </div>
+                <div id="noInvoicesMsg" class="no-invoices hidden">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <p>Aucune facture</p>
                 </div>
             </div>
-        </section>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Invoice Form View -->
+            <div id="formView" class="view active">
+                <div class="view-header">
+                    <h2>Nouvelle Facture</h2>
+                    <p>Remplissez les informations pour generer une facture Factur-X (Basic WL)</p>
+                </div>
+
+                <form id="invoiceForm">
+                    <div class="form-sections">
+                        <!-- Invoice Details -->
+                        <section class="form-section">
+                            <div class="section-header" data-section="details">
+                                <h3>Informations Facture</h3>
+                                <svg class="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </div>
+                            <div class="section-content" id="section-details">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="invoice_number">Numero de Facture *</label>
+                                        <input type="text" id="invoice_number" name="invoice_number" required
+                                            placeholder="ex: FV-2024-001">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="date">Date *</label>
+                                        <input type="date" id="date" name="date" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Seller Info -->
+                        <section class="form-section">
+                            <div class="section-header" data-section="seller">
+                                <h3>Vendeur</h3>
+                                <svg class="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </div>
+                            <div class="section-content" id="section-seller">
+                                <div class="search-wrapper">
+                                    <div class="search-box">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                        </svg>
+                                        <input type="text" id="seller_search" placeholder="Rechercher une entreprise..." autocomplete="off">
+                                    </div>
+                                    <div id="seller_search_results" class="search-results hidden"></div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group flex-2">
+                                        <label for="seller_name">Nom / Raison Sociale *</label>
+                                        <input type="text" id="seller_name" name="seller.name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="seller_email">Email</label>
+                                        <input type="email" id="seller_email" name="seller.email">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="seller_vat">N TVA Intracommunautaire</label>
+                                        <input type="text" id="seller_vat" name="seller.vat_id">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="seller_siret">SIRET</label>
+                                        <input type="text" id="seller_siret" name="seller.siret">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="seller_street">Adresse *</label>
+                                    <input type="text" id="seller_street" name="seller.address.street" required placeholder="Numero et rue">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="seller_zip">Code Postal *</label>
+                                        <input type="text" id="seller_zip" name="seller.address.zip_code" required>
+                                    </div>
+                                    <div class="form-group flex-2">
+                                        <label for="seller_city">Ville *</label>
+                                        <input type="text" id="seller_city" name="seller.address.city" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="seller_country">Pays</label>
+                                        <input type="text" id="seller_country" name="seller.address.country_code" value="FR" required maxlength="2">
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Buyer Info -->
+                        <section class="form-section">
+                            <div class="section-header" data-section="buyer">
+                                <h3>Acheteur</h3>
+                                <svg class="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </div>
+                            <div class="section-content" id="section-buyer">
+                                <div class="search-wrapper">
+                                    <div class="search-box">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                        </svg>
+                                        <input type="text" id="buyer_search" placeholder="Rechercher un client..." autocomplete="off">
+                                    </div>
+                                    <div id="buyer_search_results" class="search-results hidden"></div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group flex-2">
+                                        <label for="buyer_name">Nom / Raison Sociale *</label>
+                                        <input type="text" id="buyer_name" name="buyer.name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="buyer_vat">N TVA Intracommunautaire</label>
+                                        <input type="text" id="buyer_vat" name="buyer.vat_id">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="buyer_street">Adresse *</label>
+                                    <input type="text" id="buyer_street" name="buyer.address.street" required placeholder="Numero et rue">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="buyer_zip">Code Postal *</label>
+                                        <input type="text" id="buyer_zip" name="buyer.address.zip_code" required>
+                                    </div>
+                                    <div class="form-group flex-2">
+                                        <label for="buyer_city">Ville *</label>
+                                        <input type="text" id="buyer_city" name="buyer.address.city" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="buyer_country">Pays</label>
+                                        <input type="text" id="buyer_country" name="buyer.address.country_code" value="FR" required maxlength="2">
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Payment & References -->
+                        <section class="form-section">
+                            <div class="section-header" data-section="payment">
+                                <h3>Paiement & References</h3>
+                                <svg class="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </div>
+                            <div class="section-content" id="section-payment">
+                                <div class="form-row">
+                                    <div class="form-group flex-2">
+                                        <label for="payment_iban">IBAN Vendeur</label>
+                                        <input type="text" id="payment_iban" name="payment.iban" placeholder="FR76...">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="payment_mode">Mode de Paiement</label>
+                                        <select id="payment_mode" name="payment.mode">
+                                            <option value="30">Virement (SEPA)</option>
+                                            <option value="10">Especes</option>
+                                            <option value="48">Carte Bancaire</option>
+                                            <option value="42">Virement Bancaire</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="ref_buyer">Reference Acheteur</label>
+                                        <input type="text" id="ref_buyer" name="references.buyer_reference" placeholder="ex: IT-SERVICES">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ref_order">Reference Commande</label>
+                                        <input type="text" id="ref_order" name="references.order_reference" placeholder="ex: PO-123456">
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Line Items -->
+                        <section class="form-section">
+                            <div class="section-header" data-section="items">
+                                <h3>Lignes de Facture</h3>
+                                <svg class="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </div>
+                            <div class="section-content" id="section-items">
+                                <div id="itemsContainer">
+                                    <!-- Items populated by JS -->
+                                </div>
+                                <button type="button" class="btn-add-item" id="addItemBtn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Ajouter une ligne
+                                </button>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="form-actions">
+                        <div id="messageArea" class="message hidden"></div>
+                        <button type="submit" class="btn-primary" id="generateBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            Generer la Facture
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Invoice Detail View -->
+            <div id="detailView" class="view">
+                <div class="view-header">
+                    <button class="btn-back" id="backToListBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        Retour
+                    </button>
+                    <div class="detail-actions">
+                        <button class="btn-download" id="downloadPdfBtn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            PDF
+                        </button>
+                        <button class="btn-download btn-download-secondary" id="downloadXmlBtn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="16 18 22 12 16 6"></polyline>
+                                <polyline points="8 6 2 12 8 18"></polyline>
+                            </svg>
+                            XML
+                        </button>
+                        <button class="btn-send" id="sendInvoiceBtn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                            Envoyer
+                        </button>
+                    </div>
+                </div>
+
+                <div class="invoice-detail" id="invoiceDetail">
+                    <!-- Invoice details populated by JS -->
+                </div>
+            </div>
+        </main>
     </div>
 
     <!-- Template for a line item -->
     <template id="itemTemplate">
         <div class="line-item">
-            <div class="grid-4">
-                <div class="form-group span-2">
-                    <label>Description</label>
-                    <input type="text" class="item-desc" required>
+            <div class="line-item-row">
+                <div class="form-group flex-3">
+                    <label>Description *</label>
+                    <input type="text" class="item-desc" required placeholder="Description du produit ou service">
                 </div>
                 <div class="form-group">
-                    <label>Quantité</label>
-                    <input type="number" class="item-qty" step="any" required>
+                    <label>Quantite *</label>
+                    <input type="number" class="item-qty" step="any" required value="1" min="0">
                 </div>
                 <div class="form-group">
-                    <label>Prix Unitaire HT</label>
-                    <input type="number" class="item-price" step="0.01" required>
+                    <label>Prix HT *</label>
+                    <input type="number" class="item-price" step="0.01" required min="0" placeholder="0.00">
                 </div>
-            </div>
-            <div class="grid-4">
                 <div class="form-group">
-                    <label>Taux TVA (%)</label>
+                    <label>TVA</label>
                     <select class="item-vat" required>
                         <option value="20.0" selected>20%</option>
                         <option value="10.0">10%</option>
@@ -231,9 +340,12 @@
                         <option value="0.0">0%</option>
                     </select>
                 </div>
-                <div class="form-group remove-container">
-                    <button type="button" class="btn-danger remove-item">Supprimer</button>
-                </div>
+                <button type="button" class="btn-remove-item" title="Supprimer">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
         </div>
     </template>
