@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadPdfBtn = document.getElementById('downloadPdfBtn');
     const downloadXmlBtn = document.getElementById('downloadXmlBtn');
     const sendInvoiceBtn = document.getElementById('sendInvoiceBtn');
+    const deleteInvoiceBtn = document.getElementById('deleteInvoiceBtn');
     const generateBtn = document.getElementById('generateBtn');
 
     // State
@@ -37,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadPdfBtn.addEventListener('click', () => downloadInvoice(currentInvoiceId, 'pdf'));
     downloadXmlBtn.addEventListener('click', () => downloadInvoice(currentInvoiceId, 'xml'));
     sendInvoiceBtn.addEventListener('click', () => sendInvoice(currentInvoiceId));
+    deleteInvoiceBtn.addEventListener('click', () => deleteInvoice(currentInvoiceId));
 
     // Setup company search
     setupSearch('seller_search', 'seller_search_results', 'seller');
@@ -285,6 +287,46 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             sendInvoiceBtn.innerHTML = originalText;
             sendInvoiceBtn.disabled = false;
+        }
+    }
+
+    async function deleteInvoice(id) {
+        if (!confirm(`Etes-vous sur de vouloir supprimer la facture ${id} ?`)) {
+            return;
+        }
+
+        const originalText = deleteInvoiceBtn.innerHTML;
+        deleteInvoiceBtn.innerHTML = `
+            <svg class="spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+            </svg>
+            Suppression...
+        `;
+        deleteInvoiceBtn.disabled = true;
+
+        try {
+            const response = await fetch(`/invoices/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                let errMessage = "Erreur lors de la suppression";
+                try {
+                    const errData = JSON.parse(errText);
+                    if (errData.detail) errMessage = errData.detail;
+                } catch (e) { }
+                throw new Error(errMessage);
+            }
+
+            showMessage("Facture supprimee avec succes !", "success");
+            showFormView();
+            fetchInvoices();
+        } catch (e) {
+            showMessage("Erreur de suppression: " + e.message, 'error');
+        } finally {
+            deleteInvoiceBtn.innerHTML = originalText;
+            deleteInvoiceBtn.disabled = false;
         }
     }
 

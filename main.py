@@ -92,6 +92,11 @@ async def get_invoice(invoice_number: str, accept: str = Header(default="applica
 @app.delete("/invoices/{invoice_number}")
 async def delete_invoice(invoice_number: str):
     storage = get_storage()
+    metadata = storage.get_invoice_metadata(invoice_number)
+    if not metadata:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    storage.delete_invoice(invoice_number)
     return Response(status_code=204)
 
 @app.post("/invoices/{invoice_number}/send")
