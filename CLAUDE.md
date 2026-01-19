@@ -4,7 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Factur-X Invoice Generator - A Python/FastAPI backend service that generates Factur-X compliant hybrid invoices (PDF/A-3 + XML) following the **Factur-X Basic-WL** profile. Designed for GCP Cloud Run deployment with optional local storage.
+Factur-X Invoice Generator - A Python/FastAPI backend service that generates Factur-X compliant hybrid invoices (PDF/A-3 + XML) following the **Factur-X Basic-WL** profile.
+
 
 ## Development Commands
 
@@ -37,7 +38,7 @@ Frontend (HTML/JS at /static) → FastAPI Endpoints → Invoice Generator → St
 - **models.py**: Pydantic models (InvoiceRequest, Party, Address, LineItem, Payment)
 - **invoice_generator.py**: PDF generation via WeasyPrint + Factur-X XML embedding
 - **xml_processor.py**: XML extraction from Factur-X PDFs, CII validation, metadata parsing
-- **storage.py**: Abstract storage layer with LocalStorage and GCSStorage implementations
+- **storage.py**: Abstract storage layer with LocalStorage implementation
 - **invoice_sender.py**: Remote API integration for RabbitMQ message injection
 - **auth/token.py**: Keycloak OAuth2 client credentials flow
 - **api/secure_client.py**: Authenticated HTTP client wrapper

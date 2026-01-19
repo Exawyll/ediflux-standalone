@@ -9,19 +9,6 @@ It is configured to generate invoices complying with the **Factur-X Basic-WL** (
 - Python 3.9+
 - Pip
 
-## Deployment
-
-### Google Cloud Platform (GCP) Ready
-
-This application is designed to be deployed on GCP (Cloud Run) with invoice storage on Google Cloud Storage (GCS).
-
-**Configuration:**
-- Set `STORAGE_TYPE=GCS`.
-- Set `GCS_BUCKET_NAME=your-bucket-name`.
-- Ensure the service account has `roles/storage.objectAdmin` on the bucket.
-
-The Frontend is stateless and served directly by the backend, ensuring it works seamlessly in a containerized environment (relative paths).
-
 ## Installation
 
 1.  **Create and activate a virtual environment:**
