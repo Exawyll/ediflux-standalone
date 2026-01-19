@@ -22,9 +22,6 @@ uvicorn main:app --host 0.0.0.0 --port 8080
 
 # Test (requires running server)
 python test_api.py
-
-# Build standalone executable
-python build.py
 ```
 
 ## Architecture
